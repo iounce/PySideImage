@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE TS>
+<TS version="2.1" language="zh_CN" sourcelanguage="en_US">
+<context>
+    <name>MainWindow</name>
+    <message>
+        <source>title_this_app</source>
+        <translation>PySideImage</translation>
+    </message>
+	
+	<message>
+        <source>menu_theme</source>
+        <translation>主题</translation>
+    </message>
+	<message>
+        <source>menu_language</source>
+        <translation>语言</translation>
+    </message>
+	<message>
+        <source>menu_chinese</source>
+        <translation>中文</translation>
+    </message>
+	<message>
+        <source>menu_english</source>
+        <translation>English</translation>
+    </message>
+	<message>
+        <source>menu_feedback</source>
+        <translation>反馈</translation>
+    </message>
+	<message>
+        <source>menu_about</source>
+        <translation>关于</translation>
+    </message>
+
+    <message>
+        <source>menu_select_all</source>
+        <translation>全选</translation>
+    </message>
+    <message>
+        <source>menu_copy</source>
+        <translation>复制</translation>
+    </message>
+	<message>
+        <source>menu_open_file</source>
+        <translation>打开文件</translation>
+    </message>
+    <message>
+        <source>menu_remove_file</source>
+        <translation>清空所有</translation>
+    </message>
+    <message>
+        <source>menu_open_setting</source>
+        <translation>打开配置</translation>
+    </message>
+    <message>
+        <source>menu_open_field</source>
+        <translation>打开字段</translation>
+    </message>
+    <message>
+        <source>menu_search_content</source>
+        <translation>查找内容</translation>
+    </message>
+
+    <message>
+        <source>title_save_as</source>
+        <translation>另存为</translation>
+    </message>
+
+	<message>
+        <source>title_exit</source>
+        <translation>提示</translation>
+    </message>
+	<message>
+        <source>tip_exit_message</source>
+        <translation>确认要退出吗？</translation>
+    </message>
+
+    <message>
+        <source>title_copy</source>
+        <translation>复制</translation>
+    </message>
+	<message>
+        <source>title_image_info</source>
+        <translation>图片信息</translation>
+    </message>
+	<message>
+        <source>title_open_folder</source>
+        <translation>打开所在文件夹</translation>
+    </message>
+	
+	<message>
+        <source>title_remove_image</source>
+        <translation>移除图片</translation>
+    </message>
+	<message>
+        <source>title_choose_image</source>
+        <translation>选择图片</translation>
+    </message>
+	
+</context>
+<context>
+    <name>ThemeWindow</name>
+	<message>
+        <source>title_this_window</source>
+        <translation>主题</translation>
+    </message>
+	
+	<message>
+        <source>info_default_theme</source>
+        <translation>默认主题</translation>
+    </message>
+</context>
+<context>
+    <name>FeedbackWindow</name>
+	<message>
+        <source>title_this_window</source>
+        <translation>反馈</translation>
+    </message>
+	
+	<message>
+        <source>info_qq</source>
+        <translation>QQ群: 906772910</translation>
+    </message>
+	<message>
+        <source>info_email</source>
+        <translation>Email: iounce@foxmail.com</translation>
+    </message>
+</context>
+<context>
+    <name>AboutWindow</name>
+	<message>
+        <source>title_this_window</source>
+        <translation>关于</translation>
+    </message>
+	<message>
+        <source>title_this_app</source>
+        <translation>PySideImage</translation>
+    </message>
+</context>
+<context>
+    <name>MessageWindow</name>
+	<message>
+        <source>title_this_window</source>
+        <translation>提示</translation>
+    </message>
+	<message>
+        <source>title_ok</source>
+        <translation>确定</translation>
+    </message>
+	<message>
+        <source>title_cancel</source>
+        <translation>取消</translation>
+    </message>
+</context>
+<context>
+    <name>ViewWindow</name>
+	<message>
+        <source>title_pixel</source>
+        <translation>像素</translation>
+    </message>
+</context>
+<context>
+    <name>SettingWindow</name>
+	<message>
+        <source>title_default_width</source>
+        <translation>图片默认宽度:</translation>
+    </message>
+    <message>
+        <source>title_default_height</source>
+        <translation>图片默认高度:</translation>
+    </message>
+	<message>
+        <source>title_auto_column</source>
+        <translation>自动计算列数</translation>
+    </message>
+	<message>
+        <source>title_fix_column</source>
+        <translation>设置固定列数</translation>
+    </message>
+	<message>
+        <source>title_ok</source>
+        <translation>确定</translation>
+    </message>
+	<message>
+        <source>title_cancel</source>
+        <translation>取消</translation>
+    </message>
+	<message>
+        <source>title_setting</source>
+        <translation>参数设置</translation>
+    </message>
+</context>
+</TS>
