@@ -36,12 +36,15 @@ from style import LabelStyle, ButtonStyle, WidgetStyle, MenuStyle
 from utils import FileUtils
 from widget import WidgetManager
 
+# image type
+class ImageType:
+    GIF = 1
+    Default = 0
 
 # drag type
 class DragAction:
     ENTER = "1"
     DROP = "2"
-
 
 # view image window
 class ViewWindow(BaseWindow):
@@ -54,10 +57,22 @@ class ViewWindow(BaseWindow):
         self.widget_main = QtWidgets.QScrollArea()
         self.widget_main.setWidgetResizable(True)
         self.widget_main.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        ext = os.path.splitext(file_path)[1]
+        if ext.lower() == ".gif":
+            image_type = ImageType.GIF
+            image = QtGui.QMovie(file_path)
+            image.start()
+            orig_width = image.currentImage().width()
+            orig_height = image.currentImage().height()
+        else:
+            image_type = ImageType.Default
+            image = QtGui.QImage(file_path)
+            orig_width = image.width()
+            orig_height = image.height()
 
-        image = QtGui.QImage(file_path)
-        width = image.width()
-        height = image.height()
+        width = orig_width
+        height = orig_height
         s_width = self.screen.width()
 
         if width > s_width:
@@ -67,15 +82,18 @@ class ViewWindow(BaseWindow):
 
         self.lbl_image = QtWidgets.QLabel()
         self.lbl_image.setFixedSize(width, height)
-
-        pixmap = QtGui.QPixmap.fromImage(
-            image.scaled(
-                self.lbl_image.size(),
-                aspectMode=Qt.KeepAspectRatio,
-                mode=Qt.SmoothTransformation,
+        
+        if image_type == ImageType.GIF:
+            self.lbl_image.setMovie(image)
+        else:
+            pixmap = QtGui.QPixmap.fromImage(
+                image.scaled(
+                    self.lbl_image.size(),
+                    aspectMode=Qt.KeepAspectRatio,
+                    mode=Qt.SmoothTransformation,
+                )
             )
-        )
-        self.lbl_image.setPixmap(pixmap)
+            self.lbl_image.setPixmap(pixmap)
 
         self.widget_main.setWidget(self.lbl_image)
         self.base_layout.addWidget(self.widget_main)
@@ -85,9 +103,9 @@ class ViewWindow(BaseWindow):
         self.set_title(
             file_path
             + "  "
-            + str(image.width())
+            + str(orig_width)
             + "*"
-            + str(image.height())
+            + str(orig_height)
             + ViewWindow.tr("title_pixel")
         )
 
@@ -290,6 +308,9 @@ class DragLabel(QtWidgets.QLabel):
         # allow the context menu to pop up
         if event.button() == Qt.RightButton:
             return
+        
+        if self.is_gif():
+            return
 
         drag = QtGui.QDrag(self)
         mime_data = QtCore.QMimeData()
@@ -299,6 +320,9 @@ class DragLabel(QtWidgets.QLabel):
 
     # start dragging
     def dragEnterEvent(self, event):
+        if self.is_gif():
+            return
+        
         image = event.mimeData().imageData()
         if image is None:
             return
@@ -310,6 +334,9 @@ class DragLabel(QtWidgets.QLabel):
 
     # end dragging
     def dropEvent(self, event):
+        if self.is_gif():
+            return
+        
         image = event.mimeData().imageData()
         if image is None:
             return
@@ -334,6 +361,14 @@ class DragLabel(QtWidgets.QLabel):
     def set_file_path(self, file_path):
         self.file_path = file_path
 
+    # check gif
+    def is_gif(self):
+        ext = os.path.splitext(self.file_path)[1]
+        if ext.lower() == ".gif":
+            return True
+        
+        return False
+
     # show context menu
     def on_show_menu(self, pos):
         print("show:", self.sender())
@@ -343,6 +378,9 @@ class DragLabel(QtWidgets.QLabel):
 
     # callback when file copied
     def on_copy_file(self):
+        if self.is_gif():
+            return
+
         mime_data = QtCore.QMimeData()
         mime_data.setImageData(QtGui.QImage(self.file_path))
         self.clipboard.setMimeData(mime_data)
@@ -373,7 +411,7 @@ class DragScrollArea(QtWidgets.QScrollArea):
         mime_data = event.mimeData()
         file_name = mime_data.text()
         postfix = os.path.splitext(file_name)[1]
-        if postfix.lower() in [".jpg", ".jpeg", ".png", ".bmp"]:
+        if postfix.lower() in [".jpg", ".jpeg", ".png", ".bmp", ".gif"]:
             event.accept()
 
         print("enter: ", self, id(self), file_name, postfix)
@@ -649,15 +687,27 @@ class MainWindow(QMainWindow):
         self.showMaximized()
 
     # add image
-    # image: QImage
+    # image: QImage/QMovie
     # file_path: image path
-    def add_image(self, image, file_path):
-        print(image.width(), image.height())
+    def add_image(self, image, image_type, file_path):
+        #print(image.width(), image.height())
+        orig_width = 0
+        orig_height = 0
+
+        if image_type == ImageType.GIF:
+            print("Add:", file_path, image_type, image.currentImage())
+            orig_width = image.currentImage().width()
+            orig_height = image.currentImage().height()
+        else:
+            orig_width = image.width()
+            orig_height = image.height()
 
         width = self.fix_width
         height = self.fix_height
 
-        if image.height() > image.width():
+        print("Add:", file_path, image_type, orig_width, orig_height)
+
+        if orig_height > orig_width:
             width = self.fix_height
             height = self.fix_width
 
@@ -665,15 +715,18 @@ class MainWindow(QMainWindow):
         label.setMouseTracking(True)
         label.setFixedSize(width, height)
         label.setAcceptDrops(True)
-
-        pixmap = QtGui.QPixmap.fromImage(
-            image.scaled(
-                label.size(),
-                aspectMode=Qt.IgnoreAspectRatio,
-                mode=Qt.SmoothTransformation,
+        
+        if image_type == ImageType.GIF:
+            label.setMovie(image)
+        else:
+            pixmap = QtGui.QPixmap.fromImage(
+                image.scaled(
+                    label.size(),
+                    aspectMode=Qt.IgnoreAspectRatio,
+                    mode=Qt.SmoothTransformation,
+                )
             )
-        )
-        label.setPixmap(pixmap)
+            label.setPixmap(pixmap)
         label.setScaledContents(True)
         label.setMouseTracking(True)
         label.drag_signal.connect(self.on_change_image)
@@ -741,7 +794,17 @@ class MainWindow(QMainWindow):
         id = obj["id"]
         file_path = obj["file_path"]
         print("on_drag_image:", msg)
-        self.add_image(QtGui.QImage(file_path), file_path)
+        
+        ext = os.path.splitext(file_path)[1]
+        if ext.lower() == ".gif":
+            image_type = ImageType.GIF
+            image = QtGui.QMovie(file_path)
+            image.start()
+        else:
+            image_type = ImageType.Default
+            image = QtGui.QImage(file_path)
+                
+        self.add_image(image, image_type, file_path)
 
     # callback when image closed
     def on_close_image(self):
@@ -773,7 +836,17 @@ class MainWindow(QMainWindow):
         # print("end:", self.last_path)
 
         for file_path in file_paths:
-            self.add_image(QtGui.QImage(file_path), file_path)
+            ext = os.path.splitext(file_path)[1]
+            if ext.lower() == ".gif":
+                image_type = ImageType.GIF
+                image = QtGui.QMovie(file_path)
+                image.start()
+            else:
+                image_type = ImageType.Default
+                image = QtGui.QImage(file_path)
+                
+            print("Open:", file_path, image_type, image)
+            self.add_image(image, image_type, file_path)
 
     # callback when image removed
     def on_remove_file(self):
@@ -800,7 +873,7 @@ class MainWindow(QMainWindow):
         if mime_data:
             if mime_data.hasImage():
                 image = QtGui.QImage(mime_data.imageData())
-                self.add_image(image, None)
+                self.add_image(image, ImageType.Default, None)
 
     # clear current layout
     def clear_layout(self):
