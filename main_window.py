@@ -2,7 +2,7 @@
 
 import json
 import os
-from PySide6 import QtWidgets, QtGui, QtCore
+from PySide6 import QtWidgets, QtGui, QtCore, QtSvg
 from PySide6.QtGui import QCursor, QAction
 from PySide6.QtCore import Qt, QSize, QRect, Signal
 from PySide6.QtWidgets import (
@@ -39,6 +39,8 @@ from widget import WidgetManager
 # image type
 class ImageType:
     GIF = 1
+    SVG = 2
+    WEBP = 3
     Default = 0
 
 # drag type
@@ -46,34 +48,87 @@ class DragAction:
     ENTER = "1"
     DROP = "2"
 
+class ImageHelper:
+    @staticmethod
+    def is_gif(file_path):
+        ext = os.path.splitext(file_path)[1]
+        if ext.lower() == ".gif" or ext.lower() == ".webp":
+            return True
+        return False
+    
+    @staticmethod
+    def is_svg(file_path):
+        ext = os.path.splitext(file_path)[1]
+        if ext.lower() == ".svg":
+            return True
+        return False
+    
+    @staticmethod
+    def image_from(file_path, width = None):
+        if ImageHelper.is_gif(file_path):
+            image_type = ImageType.GIF
+            image = QtGui.QMovie(file_path)
+            image.start()
+        elif ImageHelper.is_svg(file_path):
+            image_type = ImageType.SVG
+            render = QtSvg.QSvgRenderer(file_path)
+            rect = render.viewBox()
+            if width is None:
+                image_width = rect.width()
+                image_height = rect.height()
+            else:
+                image_width = width
+                image_height = int(width / (rect.width() / rect.height()))
+            image = QtGui.QPixmap(image_width, image_height)
+            image.fill(Qt.transparent)
+            painter = QtGui.QPainter(image)
+            render.render(painter)
+        else:
+            image_type = ImageType.Default
+            image = QtGui.QImage(file_path)
+
+        return (image_type, image)
+    
+    @staticmethod
+    def image_type(image_tuple):
+        if image_tuple is None or len(image_tuple) < 1:
+            return None
+        
+        return image_tuple[0]
+    
+    @staticmethod
+    def image(image_tuple):
+        if image_tuple is None or len(image_tuple) < 2:
+            return None
+        
+        return image_tuple[1]
+
 # view image window
 class ViewWindow(BaseWindow):
     def __init__(self, parent, file_path):
         super().__init__(parent)
 
         self.screen = QtGui.QGuiApplication.primaryScreen().geometry()
+        s_width = int(self.screen.width() * 0.618)
 
         self.base_layout = QtWidgets.QHBoxLayout()
         self.widget_main = QtWidgets.QScrollArea()
         self.widget_main.setWidgetResizable(True)
         self.widget_main.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        
-        ext = os.path.splitext(file_path)[1]
-        if ext.lower() == ".gif":
-            image_type = ImageType.GIF
-            image = QtGui.QMovie(file_path)
-            image.start()
+
+        image_tuple = ImageHelper.image_from(file_path, s_width)
+        image_type = ImageHelper.image_type(image_tuple)
+        image = ImageHelper.image(image_tuple)
+
+        if image_type == ImageType.GIF:
             orig_width = image.currentImage().width()
             orig_height = image.currentImage().height()
         else:
-            image_type = ImageType.Default
-            image = QtGui.QImage(file_path)
             orig_width = image.width()
             orig_height = image.height()
 
         width = orig_width
         height = orig_height
-        s_width = self.screen.width()
 
         if width > s_width:
             ratio = s_width / width
@@ -85,6 +140,8 @@ class ViewWindow(BaseWindow):
         
         if image_type == ImageType.GIF:
             self.lbl_image.setMovie(image)
+        elif image_type == ImageType.SVG:
+            self.lbl_image.setPixmap(image)
         else:
             pixmap = QtGui.QPixmap.fromImage(
                 image.scaled(
@@ -363,8 +420,7 @@ class DragLabel(QtWidgets.QLabel):
 
     # check gif
     def is_gif(self):
-        ext = os.path.splitext(self.file_path)[1]
-        if ext.lower() == ".gif":
+        if ImageHelper.is_gif(self.file_path):
             return True
         
         return False
@@ -411,7 +467,7 @@ class DragScrollArea(QtWidgets.QScrollArea):
         mime_data = event.mimeData()
         file_name = mime_data.text()
         postfix = os.path.splitext(file_name)[1]
-        if postfix.lower() in [".jpg", ".jpeg", ".png", ".bmp", ".gif"]:
+        if postfix.lower() in [".jpg", ".jpeg", ".png", ".bmp", ".gif", ".svg", ".webp"]:
             event.accept()
 
         print("enter: ", self, id(self), file_name, postfix)
@@ -694,8 +750,9 @@ class MainWindow(QMainWindow):
         orig_width = 0
         orig_height = 0
 
+        print("add:", image, image_type, file_path)
+
         if image_type == ImageType.GIF:
-            print("Add:", file_path, image_type, image.currentImage())
             orig_width = image.currentImage().width()
             orig_height = image.currentImage().height()
         else:
@@ -718,6 +775,8 @@ class MainWindow(QMainWindow):
         
         if image_type == ImageType.GIF:
             label.setMovie(image)
+        elif image_type == ImageType.SVG:
+            label.setPixmap(image)
         else:
             pixmap = QtGui.QPixmap.fromImage(
                 image.scaled(
@@ -794,15 +853,10 @@ class MainWindow(QMainWindow):
         id = obj["id"]
         file_path = obj["file_path"]
         print("on_drag_image:", msg)
-        
-        ext = os.path.splitext(file_path)[1]
-        if ext.lower() == ".gif":
-            image_type = ImageType.GIF
-            image = QtGui.QMovie(file_path)
-            image.start()
-        else:
-            image_type = ImageType.Default
-            image = QtGui.QImage(file_path)
+            
+        image_tuple = ImageHelper.image_from(file_path, self.fix_width)
+        image_type = ImageHelper.image_type(image_tuple)
+        image = ImageHelper.image(image_tuple)
                 
         self.add_image(image, image_type, file_path)
 
@@ -836,14 +890,9 @@ class MainWindow(QMainWindow):
         # print("end:", self.last_path)
 
         for file_path in file_paths:
-            ext = os.path.splitext(file_path)[1]
-            if ext.lower() == ".gif":
-                image_type = ImageType.GIF
-                image = QtGui.QMovie(file_path)
-                image.start()
-            else:
-                image_type = ImageType.Default
-                image = QtGui.QImage(file_path)
+            image_tuple = ImageHelper.image_from(file_path, self.fix_width)
+            image_type = ImageHelper.image_type(image_tuple)
+            image = ImageHelper.image(image_tuple)
                 
             print("Open:", file_path, image_type, image)
             self.add_image(image, image_type, file_path)
